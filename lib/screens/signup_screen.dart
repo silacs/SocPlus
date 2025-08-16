@@ -25,6 +25,7 @@ class _SignupScreenState extends State<SignupScreen> {
   String? usernameError;
   String? emailError;
   bool passwordsShown = false;
+  bool pending = false;
   @override
   void dispose() {
     nameController.dispose();
@@ -89,7 +90,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   controller: emailController,
                   label: Text("Email"),
                   onChanged: (value) {
-                    if (emailError != null) {  
+                    if (emailError != null) {
                       emailError = null;
                       formKey.currentState!.validate();
                     }
@@ -125,36 +126,49 @@ class _SignupScreenState extends State<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     FilledButton(
-                      onPressed: () async {
-                        usernameError = null;
-                        emailError = null;
-                        if (!formKey.currentState!.validate()) return;
-                        var response = await AuthService.signup(
-                          SignupRequest(
-                            nameController.text,
-                            surnameController.text,
-                            emailController.text,
-                            usernameController.text,
-                            passwordController.text,
-                          ),
-                        );
-                        if (response.success && context.mounted) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (builder) {
-                                return VerifyScreen(
-                                  email: emailController.text,
+                      onPressed:
+                          pending
+                              ? null
+                              : () async {
+                                usernameError = null;
+                                emailError = null;
+                                if (!formKey.currentState!.validate()) return;
+                                setState(() {
+                                  pending = true;
+                                });
+                                var response = await AuthService.signup(
+                                  SignupRequest(
+                                    nameController.text,
+                                    surnameController.text,
+                                    emailController.text,
+                                    usernameController.text,
+                                    passwordController.text,
+                                  ),
                                 );
+                                if (mounted) {
+                                  setState(() {
+                                    pending = false;
+                                  });
+                                }
+                                if (response.success && context.mounted) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (builder) {
+                                        return VerifyScreen(
+                                          email: emailController.text,
+                                        );
+                                      },
+                                    ),
+                                  );
+                                } else {
+                                  usernameError =
+                                      response.error?.errors['Username']?[0];
+                                  emailError =
+                                      response.error?.errors['Email']?[0];
+                                  formKey.currentState!.validate();
+                                }
                               },
-                            ),
-                          );
-                        } else {
-                          usernameError = response.error?.errors['Username']?[0];
-                          emailError = response.error?.errors['Email']?[0];
-                          formKey.currentState!.validate();
-                        }
-                      },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12.0),
                         child: Text("Signup"),

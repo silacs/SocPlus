@@ -22,6 +22,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
   final TextEditingController codeController = TextEditingController();
   String? codeError;
+  bool pending = false;
 
   @override
   void dispose() {
@@ -112,11 +113,19 @@ class _VerifyScreenState extends State<VerifyScreen> {
                       ),
                     ),
                     FilledButton(
-                      onPressed: () async {
+                      onPressed: pending ? null : () async {
                         if (!key.currentState!.validate()) return;
+                        setState(() {
+                          pending = true;
+                        });
                         var res = await AuthService.verify(
                           VerifyRequest(widget.email, codeController.text),
                         );
+                        if (mounted) {
+                          setState(() {
+                            pending = false;
+                          });
+                        }
                         if (res.success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

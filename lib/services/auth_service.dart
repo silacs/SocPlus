@@ -39,16 +39,32 @@ class AuthService {
     return json.decode(body);
   }
 
-  static final String baseUrl = 'http://192.168.0.111:80/api/auth';
+  static final String baseUrl = 'http://silacs.ddns.net/api/auth';
   static Future<void> logOut(BuildContext context) async {
     var sharedPrefs = await SharedPreferences.getInstance();
     sharedPrefs.clear();
     if (!context.mounted) return;
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) {
-      return WelcomeScreen();
-    }), (route) => false,);
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return WelcomeScreen();
+        },
+      ),
+      (route) => false,
+    );
   }
-
+  static Future<HttpResponse<User>> editSelf(SignupRequest user) async {
+    var res = await http.put(Uri.parse(baseUrl), body: user.toJson(), headers: {
+      'Authorization': 'Bearer ${await accessToken}'
+    });
+    var body = json.decode(res.body);
+    if (res.statusCode == 200) {
+      return HttpResponse(true);
+    } else {
+      return HttpResponse(false, error: HttpError.fromJson(body));
+    }
+  }
   static Future<void> refreshIfExpired(BuildContext context) async {
     if ((await decodedAccessToken)['exp'] <=
         DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000) {
@@ -124,24 +140,38 @@ class AuthService {
       );
     }
   }
+
   static Future<HttpResponse<User>> getSelf() async {
-    final response = await http.get(Uri.parse(baseUrl), headers: {
-      'Authorization': 'Bearer ${await accessToken}'
-    });
+    final response = await http.get(
+      Uri.parse(baseUrl),
+      headers: {'Authorization': 'Bearer ${await accessToken}'},
+    );
     if (response.statusCode == 200) {
-      return HttpResponse(true, body: User.fromJson(json.decode(response.body)));
+      return HttpResponse(
+        true,
+        body: User.fromJson(json.decode(response.body)),
+      );
     }
-    return HttpResponse(false, error: HttpError.fromJson(json.decode(response.body)));
+    return HttpResponse(
+      false,
+      error: HttpError.fromJson(json.decode(response.body)),
+    );
   }
-  static Future<HttpResponse> deleteUser() async  {
-    final response = await http.delete(Uri.parse(baseUrl), headers: {
-      'Authorization': 'Bearer ${await accessToken}'
-    });
+
+  static Future<HttpResponse> deleteUser() async {
+    final response = await http.delete(
+      Uri.parse(baseUrl),
+      headers: {'Authorization': 'Bearer ${await accessToken}'},
+    );
     if (response.statusCode == 200) {
       return HttpResponse(true);
     }
-    return HttpResponse(false, error: HttpError.fromJson(json.decode(response.body)));
+    return HttpResponse(
+      false,
+      error: HttpError.fromJson(json.decode(response.body)),
+    );
   }
+
   static Future<http.Response> postJson(
     String url,
     Request? body,

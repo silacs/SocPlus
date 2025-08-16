@@ -32,6 +32,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
               Text(
                 "Sign up to get started, or login if you already have an account.",
+                textAlign: TextAlign.center,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

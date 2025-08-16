@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:socplus/services/auth_service.dart';
 import 'package:socplus/services/post_service.dart';
 import 'package:socplus/widgets/styled_text_area.dart';
 
@@ -15,6 +16,7 @@ class _UploadPostScreenState extends State<UploadPostScreen> {
   final textController = TextEditingController();
   List<File> selectedImages = [];
   int selectedPrivacy = 0;
+  bool pending = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,13 +62,16 @@ class _UploadPostScreenState extends State<UploadPostScreen> {
                       child: Text("Select Images"),
                     ),
                     FilledButton(
-                      onPressed: () async {
+                      onPressed: pending ? null : () async {
                         if (!_formKey.currentState!.validate()) return;
+                        await AuthService.refreshIfExpired(context);
+                        setState(() {pending = true;});
                         var response = await PostService.uploadPost(
                           textController.text,
                           selectedPrivacy,
                           selectedImages,
                         );
+                        setState(() {pending = false;});
                         if (!mounted) return;
                         if (response.success && context.mounted) {
                           selectedImages = [];

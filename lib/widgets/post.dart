@@ -21,11 +21,14 @@ class _PostState extends State<Post> {
   bool disliked = false;
   String? userId;
   bool deleted = false;
+  bool isFollowing = false;
+  bool isFriend = false;
 
   @override
   void initState() {
     super.initState();
     setUserId();
+    getFollowing();
   }
 
   void setUserId() async {
@@ -34,6 +37,21 @@ class _PostState extends State<Post> {
     setState(() {
       userId = id;
     });
+  }
+
+  void getFollowing() async {
+    await AuthService.refreshIfExpired(context);
+    var following = await PostService.isFollowing(widget.post.user.id);
+    if (following.success) {
+        isFollowing = following.body as bool;
+    }
+    if (isFollowing) {
+      var friends = await PostService.isFriend(widget.post.user.id);
+      if (friends.success) {
+          isFriend = following.body as bool;
+      }
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -51,7 +69,7 @@ class _PostState extends State<Post> {
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Column(
-                spacing: 10,
+                spacing: 3,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -66,7 +84,21 @@ class _PostState extends State<Post> {
                         ),
                       ),
                       if (userId != null && widget.post.user.id != userId)
-                        TextButton(onPressed: () {}, child: Text("Follow")),
+                        TextButton(
+                          onPressed: () async {
+                            if (!isFollowing) {
+                              var res = await PostService.follow(widget.post.user.id);
+                              if (res.success) isFollowing = true;
+                            } else {
+                              var res = await PostService.removeFollow(widget.post.user.id);
+                              if (res.success) isFollowing = false;
+                            }
+                            setState(() {
+                              
+                            });
+                          },
+                          child: Text(isFollowing ? (isFriend ? "Unfriend" : "Unfollow") : "Follow"),
+                        ),
                       if (userId != null && widget.post.user.id == userId) ...[
                         Spacer(flex: 1),
                         PopupMenuButton<String>(
@@ -103,6 +135,12 @@ class _PostState extends State<Post> {
                         ),
                       ],
                     ],
+                  ),
+                  Text(widget.post.visibility == 0 
+                  ? "Public"
+                  : widget.post.visibility == 1 
+                    ? "Friends" 
+                    : "Private"
                   ),
                   Text(
                     timeago.format(DateTime.parse(widget.post.created)),
@@ -146,7 +184,7 @@ class _PostState extends State<Post> {
                                   fit: BoxFit.fitWidth,
                                   placeholder:
                                       (context, url) => Shimmer.fromColors(
-                                        baseColor:Colors.grey[300]!,
+                                        baseColor: Colors.grey[300]!,
                                         highlightColor: Colors.grey[100]!,
                                         child: Container(
                                           width: double.infinity,
@@ -158,7 +196,8 @@ class _PostState extends State<Post> {
                           );
                         },
                         child: CachedNetworkImage(
-                          imageUrl: '${PostService.baseUrl}/image/${widget.post.images[index]}',
+                          imageUrl:
+                              '${PostService.baseUrl}/image/${widget.post.images[index]}',
                           fit: BoxFit.cover,
                         ),
                       );

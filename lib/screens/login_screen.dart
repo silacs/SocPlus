@@ -22,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? usernameError;
   String? passwordError;
   bool needsVerification = false;
+  bool pending = false;
 
   @override
   void dispose() {
@@ -47,9 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: Text("Username or email"),
                   controller: usernameController,
                   onChanged: (value) {
+                    var needsRevalidation = usernameError != null || passwordError != null;
                     usernameError = null;
                     passwordError = null;
-                    key.currentState!.validate();
+                    if (needsRevalidation) key.currentState!.validate();
                   },
                   validator: (value) {
                     if (value != null && value == '') {
@@ -83,14 +85,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     FilledButton(
-                      onPressed: () async {
+                      onPressed: pending ? null : () async {
                         if (!key.currentState!.validate()) return;
+                        setState(() {
+                          pending = true;
+                        });
                         final res = await AuthService.login(
                           LoginRequest(
                             usernameController.text,
                             passwordController.text,
                           ),
                         );
+                        if (mounted) {
+                          setState(() {
+                            pending = false;
+                          });
+                        }
                         if (!res.success) {
                           passwordError = res.error!.errors['Credentials']?[0];
                           usernameError = res.error!.errors['Username']?[0];

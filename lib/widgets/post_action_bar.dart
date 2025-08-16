@@ -124,7 +124,7 @@ class _PostActionBarState extends State<PostActionBar> {
         ),
         ElevatedButton(
           onPressed: () {
-            final comments = CommentBox(postId: widget.postId);
+            final comments = CommentBox(postId: widget.postId, scaffoldContext: context,);
             showModalBottomSheet(
               isScrollControlled: true,
               context: context,

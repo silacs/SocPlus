@@ -32,14 +32,14 @@ class _ExpandableCommentState extends State<ExpandableComment> {
         widget.text.split('\n').length > widget.trimLines ||
         widget.text.length > 150;
 
-    return GestureDetector(
-      onTap: () => setState(() => _expanded = !_expanded),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          textWidget,
-          if (isLong)
-            Padding(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        textWidget,
+        if (isLong)
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 _expanded ? "Show less" : "Read more",
@@ -49,8 +49,8 @@ class _ExpandableCommentState extends State<ExpandableComment> {
                 ),
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 }
